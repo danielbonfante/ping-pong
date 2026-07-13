@@ -1,20 +1,181 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ping Pong Game</title>
+    <title>Ping Pong Cartoon</title>
     <style>
       * {
-        overflow: hidden;
         margin: 0;
         padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        overflow: hidden;
+        font-family: "Trebuchet MS", "Arial Rounded MT Bold", sans-serif;
+        background: #286047;
+      }
+
+      canvas {
+        display: block;
+      }
+
+      .botao-pausa {
+        position: fixed;
+        top: 18px;
+        right: 18px;
+        z-index: 2;
+        width: auto;
+        padding: 9px 15px;
+        font-size: 0.9rem;
+      }
+
+      .botao-pausa.oculto { display: none; }
+
+      .tela-inicial {
+        position: fixed;
+        inset: 0;
+        z-index: 1;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+        background: rgba(4, 29, 22, 0.76);
+        transition: opacity 180ms ease, visibility 180ms ease;
+      }
+
+      .tela-inicial.oculta {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      .menu-pausa {
+        position: fixed;
+        inset: 0;
+        z-index: 3;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+        background: rgba(4, 29, 22, 0.76);
+      }
+
+      .menu-pausa.oculto { display: none; }
+
+      .menu-pausa .painel { width: min(360px, 100%); }
+      .menu-pausa h1 { margin-bottom: 12px; }
+
+      .painel {
+        width: min(440px, 100%);
+        padding: 28px;
+        color: #143c2c;
+        text-align: center;
+        background: #fff7cf;
+        border: 6px solid #143c2c;
+        border-radius: 28px;
+        box-shadow: 0 10px 0 #0c271c, 0 18px 35px rgba(0, 0, 0, 0.35);
+      }
+
+      h1 {
+        color: #e94f37;
+        font-size: clamp(2rem, 7vw, 3.4rem);
+        line-height: 1;
+        letter-spacing: 1px;
+        text-shadow: 2px 2px 0 #143c2c;
+      }
+
+      .subtitulo {
+        margin: 10px 0 18px;
+        font-size: 0.95rem;
+        font-weight: bold;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 7px;
+        font-weight: bold;
+      }
+
+      input {
+        width: 100%;
+        padding: 12px;
+        color: #143c2c;
+        font: bold 1.35rem inherit;
+        letter-spacing: 0.2em;
+        text-align: center;
+        text-transform: uppercase;
+        background: #fff;
+        border: 4px solid #143c2c;
+        border-radius: 14px;
+        outline: none;
+      }
+
+      input:focus { border-color: #e94f37; }
+
+      .ranking {
+        margin: 20px 0;
+        padding: 14px;
+        text-align: left;
+        background: #b9e4c9;
+        border: 4px solid #143c2c;
+        border-radius: 16px;
+      }
+
+      .ranking h2 { font-size: 1.05rem; text-align: center; }
+      .ranking-vazio { padding: 13px 4px 3px; text-align: center; font-size: 0.9rem; }
+      .ranking-lista { list-style: none; margin-top: 10px; }
+      .ranking-item { display: flex; justify-content: space-between; padding: 5px 2px; border-bottom: 2px dashed #5b9677; font-weight: bold; }
+      .ranking-item:last-child { border-bottom: 0; }
+
+      button {
+        width: 100%;
+        padding: 13px;
+        color: #fff;
+        font: bold 1.3rem inherit;
+        letter-spacing: 0.08em;
+        cursor: pointer;
+        background: #e94f37;
+        border: 4px solid #143c2c;
+        border-radius: 14px;
+        box-shadow: 0 5px 0 #143c2c;
+      }
+
+      button:hover:not(:disabled) { transform: translateY(-1px); }
+      button:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 #143c2c; }
+      button:disabled { cursor: not-allowed; opacity: 0.48; }
+
+      @media (max-height: 650px) {
+        .painel { padding: 18px; }
+        .ranking { margin: 12px 0; }
+        .subtitulo { margin: 6px 0 10px; }
       }
     </style>
   </head>
   <body>
     <canvas></canvas>
+    <button class="botao-pausa oculto" id="botao-pausa" type="button" aria-label="Pausar jogo">PAUSE</button>
+    <main class="tela-inicial" id="tela-inicial" aria-labelledby="titulo-jogo">
+      <section class="painel">
+        <h1 id="titulo-jogo">PING PONG!</h1>
+        <p class="subtitulo" id="mensagem-partida">Primeiro a fazer 5 gols vence.</p>
+        <label for="nome-jogador">Seu nome (até 3 letras)</label>
+        <input id="nome-jogador" type="text" maxlength="3" autocomplete="off" inputmode="text" aria-describedby="mensagem-partida" />
+        <section class="ranking" aria-labelledby="titulo-ranking">
+          <h2 id="titulo-ranking">TOP 5 LÍDERES</h2>
+          <p class="ranking-vazio" id="ranking-vazio">Ainda não há líderes no Top 5.</p>
+          <ol class="ranking-lista" id="ranking-lista"></ol>
+        </section>
+        <button id="botao-play" type="button" disabled>PLAY</button>
+      </section>
+    </main>
+    <section class="menu-pausa oculto" id="menu-pausa" aria-labelledby="titulo-pausa">
+      <div class="painel">
+        <h1 id="titulo-pausa">PAUSE</h1>
+        <p class="subtitulo">A partida está esperando por você.</p>
+        <button id="botao-retomar" type="button">RETORNAR AO JOGO</button>
+      </div>
+    </section>
     <script type="module" src="script.js"></script>
   </body>
 </html>
