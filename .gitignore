@@ -1,0 +1,8 @@
+# Go server build artifacts
+/server/server
+/server/server.exe
+/server/*.db
+
+# OS
+.DS_Store
+Thumbs.db
